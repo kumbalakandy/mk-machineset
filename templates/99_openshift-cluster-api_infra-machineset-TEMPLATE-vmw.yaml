@@ -37,14 +37,14 @@ spec:
             name: vsphere-cloud-credentials
           diskGiB: 120
           kind: VSphereMachineProviderSpec
-          memoryMiB: 16384
+          memoryMiB: 65536
           metadata:
             creationTimestamp: null
           network:
             devices:
             - networkName: VM Network
-          numCPUs: 4
-          numCoresPerSocket: 2
+          numCPUs: 16
+          numCoresPerSocket: 8
           template: ${CLUSTERID}-rhcos-generated-region-generated-zone
           userDataSecret:
             name: worker-user-data
