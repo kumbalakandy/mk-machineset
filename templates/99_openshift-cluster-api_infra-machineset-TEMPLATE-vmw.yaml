@@ -22,13 +22,14 @@ spec:
         machine.openshift.io/cluster-api-machineset: ${CLUSTERID}-infra
     spec:
       taints:
-      - effect: NoSchedule
-        key: node-function
-        value: infra
+        - effect: NoSchedule
+          key: node.ocs.openshift.io/storage
+          value: 'true'
       metadata:
         creationTimestamp: null
         labels:
           node-role.kubernetes.io/infra: ""
+          cluster.ocs.openshift.io/openshift-storage: ""
       providerSpec:
         value:
           apiVersion: vsphereprovider.openshift.io/v1beta1
@@ -44,13 +45,13 @@ spec:
             - networkName: VM Network
           numCPUs: 4
           numCoresPerSocket: 2
-          template: ${CLUSTERID}-rhcos
+          template: ${CLUSTERID}-rhcos-generated-region-generated-zone
           userDataSecret:
             name: worker-user-data
           workspace:
             datacenter: ${DATACENTER}
             datastore: ${DATASTORE}
-            folder: /Datacenter/vm/${CLUSTERID}
+            folder: /${DATACENTER}/vm/${CLUSTERID}
             server: ${VSPHERE_SERVER}
 status:
   replicas: 0
