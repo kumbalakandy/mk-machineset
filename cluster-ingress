@@ -1,0 +1,108 @@
+oc get ingressclass
+
+oc delete ingressclass nginx
+
+oc get ValidatingWebhookConfiguration
+
+oc delete ValidatingWebhookConfiguration ingress-nginx-admission
+
+
+
+Install -- 
+
+kubectl apply -f https://raw.githubusercontent.com/nginxinc/nginx-ingress-helm-operator/v2.3.0/resources/scc-daemonset.yaml
+
+
+
+
+
+
+[user@bastion ~]$ sudo -i
+[root@bastion ~]# OCP_VERSION=4.6.4
+[root@bastion ~]# MIRROR=mirror.openshift.com/pub/openshift-v4/clients
+[root@bastion ~]# wget  https://{MIRROR}/ocp/${OCP_VERSION}/openshift-install-linux-${OCP_VERSION}.tar.gz
+[root@bastion ~]# tar zxvf openshift-install-linux-${OCP_VERSION}.tar.gz  -C /usr/bin
+[root@bastion ~]# rm -f openshift-install-linux-${OCP_VERSION}.tar.gz
+[root@bastion ~]# chmod +x /usr/bin/openshift-install
+[root@bastion ~]# openshift-install version
+
+[root@bastion ~]# wget  https://{MIRROR}/ocp/${OCP_VERSION}/openshift-client-linux-${OCP_VERSION}.tar.gz
+[root@bastion ~]# tar zxvf openshift-client-linux-${OCP_VERSION}.tar.gz  -C /usr/bin
+[root@bastion ~]# rm -f openshift-client-linux-${OCP_VERSION}.tar.gz
+[root@bastion ~]# chmod +x /usr/bin/oc
+[root@bastion ~]# oc completion bash >/etc/bash_completion.d/openshift
+[root@bastion ~]# oc version
+
+
+[root@bastion ~]# su - user
+[user@bastion ~]$ ssh-keygen -f ${HOME}/.ssh/ocp46-key -N ''
+
+[user@bastion ~]$ sudo wget  vcenter.sddc.vmwaremc.com/downloads/certs/download.zip
+[user@bastion ~]$ sudo unzip download.zip
+
+
+[user@bastion ~]$ sudo cp certs/lin/* /etc/pki/ca-trust/source/anchors
+[user@bastion ~]$ sudo update-ca-trust extract
+
+[user@bastion ~]# mkdir ocp46
+[user@bastion ~]$./openshift-install create install-config --dir=ocp46  --log-level=info
+
+[user@bastion ~]$ ./openshift-install create manifests --dir=ocp46  --log-level=debug
+
+---------------------------------------------
+
+apiVersion: machine.openshift.io/v1beta1
+kind: MachineSet
+metadata:
+  name: ocpprod-b8z59-infra
+  namespace: openshift-machine-api
+  labels:
+    machine.openshift.io/cluster-api-cluster: ocpprod-b8z59
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      machine.openshift.io/cluster-api-cluster: ocpprod-b8z59
+      machine.openshift.io/cluster-api-machineset: ocpprod-b8z59-infra
+  template:
+    metadata:
+      labels:
+        machine.openshift.io/cluster-api-cluster: ocpprod-b8z59
+        machine.openshift.io/cluster-api-machine-role: infra
+        machine.openshift.io/cluster-api-machine-type: infra
+        machine.openshift.io/cluster-api-machineset: ocpprod-b8z59-infra
+    spec:
+      metadata:
+        labels:
+          cluster.ocs.openshift.io/openshift-storage: ''
+          node-role.kubernetes.io/infra: ''
+      providerSpec:
+        value:
+          numCoresPerSocket: 8
+          diskGiB: 120
+          userDataSecret:
+            name: worker-user-data
+          memoryMiB: 65536
+          credentialsSecret:
+            name: vsphere-cloud-credentials
+          network:
+            devices:
+              - networkName: ark-ocp-2410
+          metadata:
+            creationTimestamp: null
+          numCPUs: 16
+          kind: VSphereMachineProviderSpec
+          workspace:
+            datacenter: LAB-DC
+            datastore: /LAB-DC/datastore/vsanDatastore
+            folder: /LAB-DC/vm/ocpprod-b8z59
+            resourcePool: /LAB-DC/host/Lab-Cluster//Resources
+            server: vcsa01.kodevirtual.com
+          template: ocpprod-b8z59-rhcos-generated-region-generated-zone
+          apiVersion: vsphereprovider.openshift.io/v1beta1
+      taints:
+        - effect: NoSchedule
+          key: node.ocs.openshift.io/storage
+          value: 'true'
+---------------------------------------------------------------
+
