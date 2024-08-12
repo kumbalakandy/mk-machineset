@@ -1,0 +1,53 @@
+﻿apiVersion: machine.openshift.io/v1beta1
+kind: MachineSet
+metadata:
+  name: ocpprod-b8z59-infra
+  namespace: openshift-machine-api
+  labels:
+    machine.openshift.io/cluster-api-cluster: ocpprod-b8z59
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      machine.openshift.io/cluster-api-cluster: ocpprod-b8z59
+      machine.openshift.io/cluster-api-machineset: ocpprod-b8z59-infra
+  template:
+    metadata:
+      labels:
+        machine.openshift.io/cluster-api-cluster: ocpprod-b8z59
+        machine.openshift.io/cluster-api-machine-role: infra
+        machine.openshift.io/cluster-api-machine-type: infra
+        machine.openshift.io/cluster-api-machineset: ocpprod-b8z59-infra
+    spec:
+      metadata:
+        labels:
+          cluster.ocs.openshift.io/openshift-storage: ''
+          node-role.kubernetes.io/infra: ''
+      providerSpec:
+        value:
+          numCoresPerSocket: 8
+          diskGiB: 120
+          userDataSecret:
+            name: worker-user-data
+          memoryMiB: 65536
+          credentialsSecret:
+            name: vsphere-cloud-credentials
+          network:
+            devices:
+              - networkName: ark-ocp-2410
+          metadata:
+            creationTimestamp: null
+          numCPUs: 16
+          kind: VSphereMachineProviderSpec
+          workspace:
+            datacenter: LAB-DC
+            datastore: /LAB-DC/datastore/vsanDatastore
+            folder: /LAB-DC/vm/ocpprod-b8z59
+            resourcePool: /LAB-DC/host/Lab-Cluster//Resources
+            server: vcsa01.kodevirtual.com
+          template: ocpprod-b8z59-rhcos-generated-region-generated-zone
+          apiVersion: vsphereprovider.openshift.io/v1beta1
+      taints:
+        - effect: NoSchedule
+          key: node.ocs.openshift.io/storage
+          value: 'true'
